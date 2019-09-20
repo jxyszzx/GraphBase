@@ -34,7 +34,6 @@ LPA::label() {
     VI new_label(g.links.size());
     #pragma omp parallel for
     for (int i = 0; i < g.links.size(); ++i) {
-        // cout << i << endl;
         const VI& nbrs = g.links[i];
         VI cnt(g.links.size(), 0);
         for (int j = 0; j < nbrs.size(); ++j) {
@@ -59,7 +58,6 @@ LPA::label() {
             is_updated = true;
         }
     }
-    // puts("label end");
     return is_updated;
 }
 
