@@ -26,3 +26,8 @@ This is a repository to maintain some representative graph algorithms
 * run
   * `./pagerank pagerank_sample.txt`
     * where pagerank_sample.txt is in Flash/datasets
+### The better algos
+* algo_list
+  * [finished]disjoint set for wcc
+  * [finished]dijkstra for sssp
+  * kosaraju for scc
