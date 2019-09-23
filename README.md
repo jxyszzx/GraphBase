@@ -31,3 +31,5 @@ This is a repository to maintain some representative graph algorithms
   * [finished]disjoint set for wcc
   * [finished]dijkstra for sssp
   * kosaraju for scc
+* location
+  * You can find it in Flash/better algos
