@@ -1,5 +1,5 @@
 #include "lpa.h"
-#include <unordered_set>
+#include <set>
 using namespace std;
 
 LPA::LPA(bool is_undirected, string filename) {
@@ -18,7 +18,7 @@ LPA::algo(int times) {
 
 void
 LPA::getComms() {
-    unordered_set<int> diff_label;
+    set<int> diff_label;
     for (int i = 0; i < g.label.size(); ++i) {
         diff_label.insert(g.label[i]);
     }
