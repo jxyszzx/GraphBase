@@ -7,6 +7,8 @@
 #include "graph.h"
 using namespace std;
 
+// #define DEBUG
+
 typedef vector<int> VI;
 typedef vector<VI> VVI;
 
@@ -70,6 +72,9 @@ int main(int argc, char *argv[])
         do_wcc();
     } while (updated);
 
+#ifdef DEBUG
     printCC();
+#endif
+
     return 0;
 }

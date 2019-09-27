@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+
 #include <omp.h>
 
 typedef std::vector<int> VI;

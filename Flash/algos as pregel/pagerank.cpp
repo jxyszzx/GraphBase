@@ -8,6 +8,8 @@
 #include "graph.h"
 using namespace std;
 
+// #define DEBUG
+
 typedef vector<int> VI;
 typedef vector<VI> VVI;
 
@@ -88,6 +90,9 @@ int main(int argc, char *argv[])
         // printf("Iter %d, change: %Lf\n", i, change);
     }
 
+#ifdef DEBUG
     printPR();
+#endif
+
     return 0;
 }

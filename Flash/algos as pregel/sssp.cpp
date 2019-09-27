@@ -7,6 +7,8 @@
 #include "graph.h"
 using namespace std;
 
+#define DEBUG
+
 typedef vector<int> VI;
 typedef vector<VI> VVI;
 
@@ -73,6 +75,9 @@ int main(int argc, char *argv[])
         do_sssp();
     } while (updated);
 
+#ifdef DEBUG
     printSSSP();
+#endif
+
     return 0;
 }
