@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-
 #include <omp.h>
 
 typedef std::vector<int> VI;
@@ -16,11 +15,12 @@ public:
     VI label;
 
     Graph();
-    Graph(bool, std::string);
+    Graph(bool, int, std::string filename);
     void display();
 private:
     void build_undirected_graph(std::ifstream&);
     void build_directed_graph(std::ifstream&);
+    bool read(int&);
 };
 
 #endif

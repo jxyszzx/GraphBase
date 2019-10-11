@@ -2,78 +2,148 @@
 #include <cstring>
 #include <vector>
 #include <queue>
+#include <map>
 #include <set>
 #include <omp.h>
 #include "graph.h"
 using namespace std;
 
-#define DEBUG
+#define INF 0x7f7f7f7f
+// #define DEBUG
 
-typedef vector<int> VI;
-typedef vector<VI> VVI;
+std::map<std::string, double> t_starts_;
+inline void init_time(std::string name) {
+    t_starts_[name] = omp_get_wtime();
+}
+inline void get_time_cost(std::string name) {
+    double t_cost = omp_get_wtime()-t_starts_[name];
+    printf("%s time cost: %lf\n", name.c_str(), t_cost);
+}
 
-const int maxn = 1e5+5;
-
-bool vis[maxn], updated;
-vector<int> dist;
+bool updated;
 Graph g;
 
+int *edges, *g_label, *dist, N;
+long long *pos;
+bool *vis;
 
-void do_sssp() {
-    #pragma omp parallel for
-    for (int i = 0; i < g.links.size(); ++i) {
-        if (vis[i]) continue;
-        const VI& nbrs = g.links[i];
-        for (auto nbr : nbrs) {
-            #pragma omp critical
-                dist[nbr] = min(dist[nbr], g.label[i] + 1);
-        }
-    }
-    #pragma omp parallel for
-    for (int i = 0; i < dist.size(); ++i) {
-        if (dist[i] == g.label[i]) {
+void create_graph(int source_node) {
+    N = g.links.size();
+
+    pos = new long long[N + 1];
+    dist = new int[N];
+    g_label = new int[N];
+    vis = new bool[N];
+
+    for (int i = 0; i < N; ++i) {
+        if (i == source_node) {
+            dist[i] = g_label[i] = 0;
             vis[i] = true;
-        } else {
-            g.label[i] = dist[i];
-            vis[i] = false;
-            updated = true;
+            continue;
+        }
+        dist[i] = g_label[i] = INF;
+        vis[i] = false;
+    }
+
+    long long cnt = 0;
+    for (int i = 0; i < N; ++i) {
+        pos[i] = cnt;
+        cnt += g.links[i].size();
+    }
+    pos[g.links.size()] = cnt;
+
+    edges = new int[cnt];
+    cnt = 0;
+    for (auto nbr : g.links) {
+        for (auto v : nbr) {
+            edges[cnt++] = v;
         }
     }
 }
 
 void printSSSP() {
     printf("SSSP := { ");
-    for (int i = 0; i < g.label.size(); ++i) {
-        if (g.label[i] == 0x3f3f3f3f) {
-            g.label[i] = -1;
+    for (int i = 0; i < N; ++i) {
+        if (g_label[i] == INF) {
+            g_label[i] = -1;
         }
-        printf("[%d]%s", g.label[i], i+1==g.label.size() ? " }\n" : ",");
+        printf("[%d]%s", g_label[i], i+1==N ? " }\n" : ",");
     }
+}
+
+void do_sssp() {
+    bool updated;
+
+    omp_set_num_threads(32);
+    do {
+        init_time("update");
+
+        updated = false;
+        #pragma omp parallel
+        {
+            #pragma omp for firstprivate(pos, edges, vis, g_label) schedule(dynamic, 128) reduction(| : updated)
+            for (int i = 0; i < N; ++i) {
+                if (vis[i]) {
+                    for (long long e_idx = pos[i]; e_idx < pos[i+1]; ++e_idx) {
+                        int u = edges[e_idx];
+                        if (dist[u] == INF) {
+                            dist[u] = g_label[i] + 1;
+                            updated |= true;
+                        }
+                    }
+                }
+            }
+
+            #pragma omp single nowait
+            {
+                get_time_cost("update");
+                init_time("main");
+            }
+
+            #pragma omp for
+            for (int i = 0; i < N; ++i) {
+                if (g_label[i] != dist[i]) {
+                    g_label[i] = dist[i];
+                    vis[i] = true;
+                } else {
+                    vis[i] = false;
+                }
+            }
+        }
+        get_time_cost("main");
+
+    } while (updated);
+    // printSSSP();
 }
 
 int main(int argc, char *argv[])
 {
-    string filename(argv[1]);
-    filename = "../datasets/" + filename;
+    init_time("read");
 
-    g = Graph(true, filename);
-
-    // Init
-    memset(vis, 0, sizeof vis);
-    int source_node = 0;
-    for (int i = 0; i < g.label.size(); ++i) {
-        if (i == source_node) {
-            g.label[i] = 0;
-            continue;
-        }
-        g.label[i] = 0x3f3f3f3f;
+    if (argc == 2) {
+        g = Graph(true, atoi(argv[1]), "");
+    } else if (argc == 3) {
+        // assert(atoi(argv[1]) == 0);
+        string filename(argv[2]);
+        filename = "../datasets/" + filename;
+        g = Graph(true, 0, filename);
     }
-    dist.assign(g.label.begin(), g.label.end());
+    get_time_cost("read");
+
+#ifdef DEBUG   
+    g.display();
+#endif
+    // puts("ok");
+
+    init_time("algo");
+    // Init
+    int source_node = 0;
+    create_graph(source_node);
     // Algo
-    do {
-        updated = false;
-        do_sssp();
-    } while (updated);
+
+    do_sssp();
+
+    get_time_cost("algo");
 
 #ifdef DEBUG
     printSSSP();
