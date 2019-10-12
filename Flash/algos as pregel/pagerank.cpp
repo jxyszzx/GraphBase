@@ -20,7 +20,7 @@ inline void get_time_cost(std::string name) {
     printf("%s time cost: %lf\n", name.c_str(), t_cost);
 }
 
-long double* pagerank, *new_pagerank;
+double* pagerank, *new_pagerank, *page_matter;
 
 Graph g;
 
@@ -34,8 +34,9 @@ void create_graph() {
     N = g.links.size();
 
     pos = new long long[N + 1];
-    pagerank = new long double[N];
-    new_pagerank = new long double[N];
+    pagerank = new double[N];
+    new_pagerank = new double[N];
+    page_matter = new double[N];
 
     long long cnt = 0;
     for (int i = 0; i < N; ++i) {
@@ -55,31 +56,49 @@ void create_graph() {
 
 void do_page_rank(int max_iter) {
     omp_set_num_threads(32);
+
     while (max_iter--) {
 // init_time("one round");
+
         double change = 0;
+        
+        // init_time("pagerank");
+
         #pragma omp parallel
         {
-            #pragma omp for reduction(+ : change)
+            #pragma omp for schedule(dynamic,128) reduction(+ : change)
             for (int i = 0; i < N; ++i) {
                 double _PR = 0.0;
                 for (long long e_idx = pos[i]; e_idx < pos[i+1]; ++e_idx) {
                     int u = edges[e_idx];
-                    _PR += pagerank[u] / (pos[u+1]-pos[u]);
+                    _PR += page_matter[u];
+                    // pagerank[u] / (pos[u+1]-pos[u]);
                 }
                 new_pagerank[i] = damping_value + _PR * damping_factor;
                 change += fabs(new_pagerank[i] - pagerank[i]);
             }
+        // #pragma omp single
+        // {
+        // get_time_cost("pagerank");
+        // init_time("update");
+
+        // }
+
             #pragma omp for
             for (int i = 0; i < N; ++i) {
 // printf("%d: %LF, %Lf\n", i, pagerank[i], new_pagerank[i]);
                 pagerank[i] = new_pagerank[i];
-            }    
+                page_matter[i] = pagerank[i]/(pos[i+1]-pos[i]);
+            }
+            
         }
-        if (change < min_delta) {
+        // get_time_cost("update");
+
+        if (change <= min_delta) {
             break;
         }
 // get_time_cost("one round");
+
 // printf("Iter %d, change: %lf\n", max_iter, change);
     }
 }
@@ -87,7 +106,7 @@ void do_page_rank(int max_iter) {
 void printPR() {
     printf("pagerank := { ");
     for (int i = 0; i < N; ++i) {
-        printf("[%Lf] ", pagerank[i]);
+        printf("[%lf] ", pagerank[i]);
     }
     puts(" }");
 }
@@ -128,6 +147,7 @@ int main(int argc, char *argv[])
     #pragma omp parallel for
     for (int i = 0; i < g.label.size(); ++i) {
         pagerank[i] = 1.0 / N;
+        page_matter[i] = pagerank[i]/(pos[i+1]-pos[i]);
     }
 
 init_time("algo");

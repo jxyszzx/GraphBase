@@ -92,6 +92,7 @@ void do_sssp() {
                         }
                     }
                 }
+                vis[i] = false;
             }
 
             #pragma omp single nowait
@@ -135,12 +136,12 @@ int main(int argc, char *argv[])
 #endif
     // puts("ok");
 
-    init_time("algo");
     // Init
     int source_node = 0;
     create_graph(source_node);
     // Algo
-
+    init_time("algo");
+    
     do_sssp();
 
     get_time_cost("algo");
