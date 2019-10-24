@@ -78,9 +78,9 @@ init_time("real algo");
                 update_pre_iter[u] = false;
                 for (long long e_idx = pos[u]; e_idx < pos[u+1]; ++e_idx) {
                     const int &v = edges[e_idx];
-                    if (G_scc[v] == -1 && cur_color[u] > cur_color[v]) {
+                    if (G_scc[v] == -1 && cur_color[u] < cur_color[v]) {
                         omp_set_lock(&lock_[v]);
-                        if (cur_color[u] > cur_color[v]) {
+                        if (cur_color[u] < cur_color[v]) {
                             cur_color[v] = cur_color[u];
                         }
                         omp_unset_lock(&lock_[v]);

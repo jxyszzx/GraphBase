@@ -114,7 +114,6 @@ void printCC() {
 void do_wcc() {
     bool updated;
 
-    omp_set_num_threads(32);
     do {
         // init_time("update");
 
@@ -162,16 +161,22 @@ void do_wcc() {
 
 int main(int argc, char *argv[])
 {
+    /*  [./wcc 32 1]
+        [./wcc 32 0 sample.txt]
+    */
     init_time("read");
 
-    if (argc == 2) {
-        g = Graph(true, atoi(argv[1]), "");
-    } else if (argc == 3) {
+    if (argc == 3) {
+        g = Graph(true, atoi(argv[2]), "");
+    } else if (argc == 4) {
         // assert(atoi(argv[1]) == 0);
-        string filename(argv[2]);
+        string filename(argv[3]);
         filename = "../datasets/" + filename;
         g = Graph(true, 0, filename);
     }
+
+    int NUM = atoi(argv[1]);
+    omp_set_num_threads(NUM);
 
     get_time_cost("read");
 

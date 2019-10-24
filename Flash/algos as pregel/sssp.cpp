@@ -74,9 +74,8 @@ void printSSSP() {
 void do_sssp() {
     bool updated;
 
-    omp_set_num_threads(32);
     do {
-        init_time("update");
+        // init_time("update");
 
         updated = false;
         #pragma omp parallel
@@ -95,11 +94,11 @@ void do_sssp() {
                 vis[i] = false;
             }
 
-            #pragma omp single nowait
-            {
-                get_time_cost("update");
-                init_time("main");
-            }
+            // #pragma omp single nowait
+            // {
+            //     get_time_cost("update");
+            //     init_time("main");
+            // }
 
             #pragma omp for
             for (int i = 0; i < N; ++i) {
@@ -111,7 +110,7 @@ void do_sssp() {
                 }
             }
         }
-        get_time_cost("main");
+        // get_time_cost("main");
 
     } while (updated);
     // printSSSP();
@@ -119,16 +118,23 @@ void do_sssp() {
 
 int main(int argc, char *argv[])
 {
+    /*  [./wcc 32 1]
+        [./wcc 32 0 sample.txt]
+    */
     init_time("read");
 
-    if (argc == 2) {
-        g = Graph(true, atoi(argv[1]), "");
-    } else if (argc == 3) {
+    if (argc == 3) {
+        g = Graph(true, atoi(argv[2]), "");
+    } else if (argc == 4) {
         // assert(atoi(argv[1]) == 0);
-        string filename(argv[2]);
+        string filename(argv[3]);
         filename = "../datasets/" + filename;
         g = Graph(true, 0, filename);
     }
+
+    int NUM = atoi(argv[1]);
+    omp_set_num_threads(NUM);
+
     get_time_cost("read");
 
 #ifdef DEBUG   
