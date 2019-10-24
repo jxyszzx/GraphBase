@@ -4,11 +4,12 @@
 #include <stack>
 #include <queue>
 #include <cmath>
+#include <cstring>
 #include <algorithm>
 #include "graph.h"
 #include "omp.h"
 
-// #define DEBUG_INFO
+#define DEBUG_INFO
 #define TIME_INFO
 // #define THREAD_INFO
 
@@ -37,29 +38,52 @@ using namespace std;
 // }
 
 Graph g_;
-vector<double> centrality;
 
-void updateBC(int u, double add) {
-    #pragma omp critical
-    centrality[u] += add;
+double *centrality;
+
+int *edges, N;
+long long *pos;
+
+void create_graph() {
+    N = g_.links.size();
+
+    pos = new long long[N + 1];
+
+    long long cnt = 0;
+    for (int i = 0; i < N; ++i) {
+        pos[i] = cnt;
+        cnt += g_.links[i].size();
+    }
+    pos[N] = cnt;
+
+    edges = new int[cnt];
+    cnt = 0;
+    for (auto nbr : g_.links) {
+        for (auto v : nbr) {
+            edges[cnt++] = v;
+        }
+    }
 }
 
 void printBC() {
-    for (int i = 0; i < centrality.size(); ++i) {
+    for (int i = 0; i < N; ++i) {
         printf("Node %d: %lf\n", i, centrality[i]);
     }
 }
 
 void do_centrality() {
-    const int &n = g_.links.size();
-
-    #pragma omp parallel for
-    for (int s = 0; s < n; ++s) {
+    omp_set_num_threads(32);
+    #pragma omp parallel for schedule(dynamic, 128)
+    for (int s = 0; s < N; ++s) {
         queue<int> que;
         // vector<int> s;
         stack<int> S;
-        vector<int> num_paths(n, 0), dist(n, -1);
-        vector<vector<int> > parents(n, vector<int>());
+        
+        vector<vector<int> > parents(N, vector<int>());
+        int *num_paths = new int[N], *dist = new int[N];
+        memset(num_paths, 0, sizeof(int)*N);
+        memset(dist, -1, sizeof(int)*N);
+
         num_paths[s] = 1;
         dist[s] = 0;
         que.push(s);
@@ -70,7 +94,8 @@ void do_centrality() {
             // s.push_back(u);
             S.push(u);
             
-            for (auto v : g_.links[u]) {
+            for (long long e_idx = pos[u]; e_idx < pos[u+1]; ++e_idx) {
+                int v = edges[e_idx];
                 if (dist[v] == -1) {
                     que.push(v);
                     dist[v] = dist[u] + 1;
@@ -82,7 +107,10 @@ void do_centrality() {
             }
         }
 
-        vector<double> delta(n, 0);
+        double *delta = new double[N];
+        for (int i = 0;  i < N; ++i) {
+            delta[i] = 0;
+        }
         while (!S.empty()) {
             int u = S.top();
             S.pop();
@@ -91,32 +119,39 @@ void do_centrality() {
                 delta[p] += num_paths[p]*coeff;
             }
             if (u != s) {
-                updateBC(u, delta[u]/2);
+                #pragma omp critical(u)
+                centrality[u] += delta[u];
             }
         }
+
+        delete[] num_paths;
+        delete[] dist;
+        delete[] delta;
     }
 }
 
 
 int main(int argc, char *argv[])
 {
-    // usage and input
-    if(argc != 2) {  
-        printf("usage: ./betweenness [ingraph]\n");
-        return -1;
+init_time("read");
+
+    if (argc == 2) {
+        g_ = Graph(true, atoi(argv[1]), "");
+    } else if (argc == 3) {
+        // assert(atoi(argv[1]) == 0);
+        string filename(argv[2]);
+        filename = "../datasets/" + filename;
+        g_ = Graph(true, 0, filename);
     }
 
-#ifdef TIME_INFO
-    init_time("total_time");
-#endif
+get_time_cost("read");
 
-    // read graph
-    string filename(argv[1]);
-    filename = "../datasets/" + filename;
-    g_ = Graph(false, filename);
-
+    create_graph();
     // init centrality
-    centrality.assign(g_.links.size(), 0);
+    centrality = new double[N];
+    for (int i = 0; i < N; ++i) {
+        centrality[i] = 0.0;
+    }
 
 #ifdef THREAD_INFO
     if( omp_get_max_threads() > 1 ) {
@@ -130,13 +165,13 @@ int main(int argc, char *argv[])
 #ifdef DEBUG_INFO
     printf("Beginning betweenness centrality computation...\n");
 #endif
-#ifdef TIME_INFO
-    init_time("centrality_time");
-#endif
+
+init_time("centrality_time");
+
     do_centrality();
-#ifdef TIME_INFO
-    get_time_cost("centrality_time");
-#endif
+
+get_time_cost("centrality_time");
+
 #ifdef DEBUG_INFO
     printf("Computing complete\n");
 #endif
@@ -145,9 +180,10 @@ int main(int argc, char *argv[])
     printBC();
 #endif
 
-#ifdef TIME_INFO
-    get_time_cost("total_time");
-#endif
+
+    delete[] centrality;
+    delete[] pos;
+    delete[] edges;
 
     return 0;
 }

@@ -1,23 +1,28 @@
 #!/bin/bash
+# Compile Macro
 CC = g++
-CFLAGS = -O2 -Wall
+CFLAGS = -Ofast -Wall
 LDFLAGS = -Wall
 
-OBJ1 = graph.o
+# Dir
+# DIR_INC = ../include
+# DIR_SRC = ../src
+
+OBJ1 = ../include/graph.o
 CXXFLAGS:= -std=c++11
 MPFLAGS:= -fopenmp
 
-core_tar=core
+core_tar=core_parallel
 
-compile_list = core
+compile_list = core_parallel
 
 all: $(core_tar)
 
-$(core_tar) : $(OBJ1) core.o
+$(core_tar) : $(OBJ1) core_parallel.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(CXXFLAGS) $(MPFLAGS)
 
-%.o: %.cpp %.h
-	$(CC) -o $@ -c $< $(CFLAGS) $(CXXFLAGS) $(MPFLAGS)
+%.o: %.cpp
+	$(CC) -o $@ -c $< $(CFLAGS) $(CXXFLAGS) $(MPFLAGS) 
 
 clean:
 	rm -f *.o *~ $(compile_list)

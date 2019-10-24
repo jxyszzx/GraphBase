@@ -1,0 +1,13 @@
+$ATT vector<ID> out; vector<ID> in; vector<bool> used; int color; int c;
+$RUN
+VSET A=ALL.Local(out.reserve(adj.size());used.resize(adj.size()+1))
+          .Pull(adj,if(src.adj.size()>adj.size() || (src.adj.size()==adj.size() && src.id>id)) out.push_back(src.id); else in.push_back(src.id));
+for(int i = 1; !A.is_empty(); ++i){
+  A=A.Local(fill(used,false)).Pull(out,used[src.color]=1)
+     .Local(for(size_t i=0;i<out.size();++i)if(!used[i]){c=i;break;}).Filter(c!=color).Local(color=c);
+  cout<<"iteration "<< i << ", A.size()=" << A.size() << "\n";
+  if(A.size()*50>ALL.size()) A=ALL; else A=A.Push(in);
+}
+
+ALL.Group(color,reduce(c=0,++c)).Order(c,"desc",-1).Output("Color="<<color<<",Cnt="<<c<<"\n");
+

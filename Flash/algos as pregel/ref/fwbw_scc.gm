@@ -1,0 +1,62 @@
+ Proc color_scc(G:Graph,color:N_P<Int>,id:N_P<Int>,scc:N_P<Int>,size:Int):Int{
+     Int i = 0;
+     Int nnum = size;
+     Int ret = 0;
+     Int change = 1;
+     Int x = 0;
+     While(nnum > 0){
+         [printf("round %d\n", i)];
+         i++;
+         x = 0;
+         nnum=0;
+         Foreach(n:G.Nodes)(n.scc == -1){
+             n.color = n.id;
+         }
+         While(change > 0){
+             change = 0;
+             Foreach(e:G.Edges){
+                 Node from = e.FromNode();
+                 Node to = e.ToNode();
+                 If(from.scc == -1 && to.scc == -1 && from.color > to.color){
+                     to.color = from.color;
+                     change++;
+                 }
+             }
+         }
+
+         [printf("step 1 over \n")];
+         Foreach(n:G.Nodes)(n.scc == -1 && n.color == n.id){
+             n.scc = n.id;
+         }
+
+         Foreach(n:G.Nodes)(n.scc == -1){
+             x++;
+         }
+
+         [printf("still have %d \n",x)];
+         change = 1;
+         While(change > 0){
+             change = 0;
+             Foreach(e:G.Edges){
+                 Node from = e.FromNode();
+                 Node to = e.ToNode();
+                 If(to.scc != -1 && from.color == to.scc && from.scc == -1){
+                     from.scc = to.scc;
+                     change++;
+                 }
+             }
+         }
+
+         [printf("step 2 over \n")];
+         Foreach(n:G.Nodes)(n.scc == -1){
+             nnum++;
+         }
+         [printf("still have %d \n",nnum)];
+         change = 1;
+
+     }
+     Foreach(n:G.Nodes)(n.scc == n.id){
+         ret++;
+     }
+     Return ret;
+ }

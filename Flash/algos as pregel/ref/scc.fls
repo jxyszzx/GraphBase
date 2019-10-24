@@ -1,0 +1,14 @@
+$ATT int fid; int scc;
+$RUN
+VSET A=ALL.Local(scc=-1);
+while(!A.is_empty()) {
+  VSET B=A.Local(fid=id);
+  while(!B.is_empty()) B=B.Push(eout(src.fid<fid),fid=src.fid);
+  B=A.Filter(fid==id).Local(scc=id);
+  while(!B.is_empty()) B=B.Push(ein(scc==-1&&src.scc==fid),scc=fid);
+  A=A.Filter(scc==-1);
+}
+
+cout<<"Number of SCCs is "<<ALL.Group(scc).size()<<"\n";
+
+
